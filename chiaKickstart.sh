@@ -6,7 +6,7 @@ cd "${CB_DIR}"
 . ./activate
 
 # Define Chia blockchain log file:
-LOG_FILE="/chia/logs/farmer-$(date '+%Y-%m-%d').log"
+LOG_FILE="/chia/logs/farmer.$(date '+%Y-%m-%d').log"
 
 # Check for already-running farmer instances.
 PID_COUNT=$( ps -ef | grep -v grep | grep chia_ | wc -l )
