@@ -5,4 +5,5 @@ chia-pi/*
 chia-blockchain
 .chia_keys
 git-login.txt
+config.ini
 
