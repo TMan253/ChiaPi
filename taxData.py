@@ -141,26 +141,29 @@ def getBlockExplorerBalance(address):
     if DEBUG:
         print(f"Calling URL:  {url}")
     response = requests.get(url)
+    if DEBUG:
+        print(response.text)
     data = response.json()
     confirmAPISuccessOrDie(data, DEBUG)
     return data["mojo"]
 
 # This function converts an ISO 8601 formatted timestamp string into a Unix iteger timestamp.
-# @arg strISO8601 - ISO 8601 formatted timestamp string (i.e., "2024-10-23T07:21:34.000Z").
+# @arg strISO8601 - ISO 8601 formatted UTC timestamp string (i.e., "2024-10-23T07:21:34.000Z").
+# @return int Unix timestamp
 def convertISO8601ToUnixTimestamp(strISO8601):
-    # Parse the string into a datetime object
-    dt = datetime.strptime(strISO8601, "%Y-%m-%dT%H:%M:%S.%fZ")
+    # Parse UTC datetime object from ISO 8601 string
+    utc_dt = datetime.fromisoformat(strISO8601.replace("Z", "+00:00"))
 
     # Convert to Unix timestamp
-    unix_timestamp = int(dt.timestamp())
+    unix_timestamp = int(utc_dt.timestamp())
 
     return unix_timestamp
 
-# This function converts an ISO 8601 formatted timestamp string into a MS Excel timestamp.
-# @arg strISO8601 - ISO 8601 formatted timestamp string (i.e., "2024-10-23T07:21:34.000Z").
-def convertISO8601ToMSExcelTimestamp(strISO8601):
-    # Parse the string into a datetime object
-    dt = datetime.strptime(strISO8601, "%Y-%m-%dT%H:%M:%S.%fZ")
+# This function converts a Unix timestamp into a MS Excel timestamp.
+# @arg unixTimestamp - Unix timestamp.
+def convertUnixTimestampToMSExcelTimestamp(unixTimestamp):
+    # Parse a local datetime object from the Unix timestamp
+    dt = datetime.fromtimestamp(unixTimestamp)
 
     # Convert to MS Excel timestamp
     formatted_date = dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -271,8 +274,8 @@ def getBlockExplorerTransactions(address, apiChoice):
         for item in data["received_transactions"]["transactions"]:
             itemTime = item['time']
             memo = "" if item["memo"] is None else f",,,,{item['memo']}"    # skip 3 columns if there is a memo
-            excelTimestamp = convertISO8601ToMSExcelTimestamp(itemTime)
             unixTimestamp = convertISO8601ToUnixTimestamp(itemTime)
+            excelTimestamp = convertUnixTimestampToMSExcelTimestamp(unixTimestamp)
             receiptPrice = fetchHistoricalXCHPrice(apiChoice, itemTime, unixTimestamp)
             print(f"{excelTimestamp},{item['amount_xch']},${receiptPrice},${float(item['amount_xch'])*float(receiptPrice)},{SPACE_SCAN_URL_PREFIX}{item['coin_id']}{memo}")
 
