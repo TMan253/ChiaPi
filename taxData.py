@@ -10,6 +10,7 @@ import requests
 import argparse
 from datetime import datetime
 import configparser
+import time
 
 SPACE_SCAN_URL_PREFIX="https://www.spacescan.io/en/coin/0x"
 ADDRESS = ""
@@ -24,7 +25,8 @@ DEBUG = True
 TEST_MODE = True
 CG_COIN_ID = "chia"
 LIMIT = 100
-
+API_THROTTLE_TIMEOUT_SEC = 12
+CG_API_THROTTLE_TIMEOUT_SEC = 10
 
 def set_price_api(api):
     global API_CHOICE
@@ -186,6 +188,12 @@ def fetchHistoricalXCHPrice_CoinGecko(cgDatestamp):
     }
 
     response = requests.get(url, headers=headers, params=params)
+    while response.status_code == 429:
+        if DEBUG:
+            print("CoinGecko API key timed out at " + time.strftime("%H:%M:%S", time.localtime()))
+            print("Sleeping price query " + str(CG_API_THROTTLE_TIMEOUT_SEC) + " seconds.")
+        time.sleep(CG_API_THROTTLE_TIMEOUT_SEC) # Sleep for 1 minute
+        response = requests.get(url, headers=headers, params=params)
     if DEBUG:
         print(f"API retuned:  {response.text}")
     data = response.json()
@@ -206,6 +214,12 @@ def fetchHistoricalXCHPrice_SpaceScan(unixTimestamp):
     }
 
     response = requests.get(url, params=params)
+    while response.status_code == 429:
+        if DEBUG:
+            print("SpaceScan API key timed out at " + time.strftime("%H:%M:%S", time.localtime()))
+            print("Sleeping price query " + str(API_THROTTLE_TIMEOUT_SEC) + " seconds.")
+        time.sleep(API_THROTTLE_TIMEOUT_SEC) # Sleep for 5 minutes
+        response = requests.get(url, params=params)
     data = response.json()
     confirmAPISuccessOrDie(data, DEBUG)
     return float(data["price"])
@@ -258,6 +272,12 @@ def getBlockExplorerTransactions(address, apiChoice):
         if DEBUG:
             print(f"Calling URL:  {url} ? {parameters}")
         response = requests.get(url, params=parameters)
+        while response.status_code == 429:
+            if DEBUG:
+                print("SpaceScan API key timed out at " + time.strftime("%H:%M:%S", time.localtime()))
+                print("Sleeping TX query " + str(API_THROTTLE_TIMEOUT_SEC) + " seconds.")
+            time.sleep(API_THROTTLE_TIMEOUT_SEC) # Sleep for 5 minutes
+            response = requests.get(url, params=parameters)
         data = response.json()
         confirmAPISuccessOrDie(data, DEBUG)
         
